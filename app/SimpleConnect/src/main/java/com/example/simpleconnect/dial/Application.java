@@ -32,6 +32,10 @@ public class Application {
     // Additional data defined by the app author.
     public Node additionalData;
 
+    public boolean isRunning() {
+        return state == State.RUNNING;
+    }
+
 }
 
 enum State {

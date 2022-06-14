@@ -54,19 +54,12 @@ public class DeviceDescriptorResource {
 
             bodyDocument.getDocumentElement().normalize();
 
-            deviceDescriptor.friendlyName = getTextFromSub(bodyDocument, "friendlyName");
-            deviceDescriptor.modelName = getTextFromSub(bodyDocument, "modelName");
-            deviceDescriptor.modelNumber = getTextFromSub(bodyDocument, "modelNumber");
-            deviceDescriptor.manufacturer = getTextFromSub(bodyDocument, "manufacturer");
+            deviceDescriptor.friendlyName = Util.getTextFromSub(bodyDocument, "friendlyName");
+            deviceDescriptor.modelName = Util.getTextFromSub(bodyDocument, "modelName");
+            deviceDescriptor.modelNumber = Util.getTextFromSub(bodyDocument, "modelNumber");
+            deviceDescriptor.manufacturer = Util.getTextFromSub(bodyDocument, "manufacturer");
         } catch (ParserConfigurationException | SAXException e) {
         }
     }
 
-    private String getTextFromSub(Document element, String tagName) {
-        NodeList elementsByTagName = element.getElementsByTagName(tagName);
-        if (elementsByTagName.getLength() >= 1) {
-            return elementsByTagName.item(0).getTextContent();
-        }
-        return "";
-    }
 }

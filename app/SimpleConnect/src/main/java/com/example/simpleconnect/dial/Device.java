@@ -76,17 +76,69 @@ public class Device implements Serializable {
         return new DialConnection(new ApplicationResource("jdial", this.applicationResourceUrl, this));
     }
 
-    public boolean launch(String applicationId, String[] parameters) {
-        return false;
+    public void launch(String applicationId, String[] parameters, ApplicationLaunchListener listener) {
+        this.applicationLaunchListener = listener;
+        requestLaunchTask(applicationId, parameters);
     }
-    
-    private String getTextFromSub(Document element, String tagName) {
-        NodeList elementsByTagName = element.getElementsByTagName(tagName);
-        if (elementsByTagName.getLength() >= 1) {
-            return elementsByTagName.item(0).getTextContent();
-        }
-        return "";
+
+    private void requestLaunchTask(String applicationId, String[] parameters) {
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Application doInBackground(Object[] objects) {
+                try {
+                    URL appUrl = new URL(applicationResourceUrl.toString() + "/" + applicationId);
+                    if (appUrl == null) {
+                        throw new IllegalArgumentException("This device doesn't have an applicationResourceUrl.");
+                    }
+
+                    if (!appUrl.getProtocol().equals("http")) {
+                        return null;
+                    }
+                    HttpURLConnection connection = null;
+                    try {
+                        connection = (HttpURLConnection) appUrl.openConnection();
+                        connection.setDoOutput(true);
+
+                        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                            return null;
+                        }
+
+                        try (InputStream inputStream = connection.getInputStream()) {
+                            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                            Document bodyDocument = documentBuilder.parse(inputStream);
+
+                            bodyDocument.getDocumentElement().normalize();
+
+                            return null;
+                        } catch (ParserConfigurationException | SAXException e) {
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Object o) {
+                Application application = (Application) o;
+                super.onPostExecute(o);
+                if (applicationLaunchListener != null) {
+                    applicationLaunchListener.onDataLoaded(application);
+                }
+            }
+        };
+        task.execute();
     }
+
+    public void get(String applicationId, ApplicationRequestListener listener) {
+        this.applicationRequestListener = listener;
+        requestApplicationTask(applicationId);
+    }
+
     private void requestApplicationTask(String applicationId) {
         AsyncTask task = new AsyncTask() {
             @Override
@@ -112,8 +164,8 @@ public class Device implements Serializable {
                             Document bodyDocument = documentBuilder.parse(inputStream);
 
                             bodyDocument.getDocumentElement().normalize();
-                            String name = getTextFromSub(bodyDocument, "name");
-                            String state = getTextFromSub(bodyDocument, "state");
+                            String name = Util.getTextFromSub(bodyDocument, "name");
+                            String state = Util.getTextFromSub(bodyDocument, "state");
                             Application application = new Application();
                             application.name = name;
                             switch (state) {
@@ -147,25 +199,27 @@ public class Device implements Serializable {
             protected void onPostExecute(Object o) {
                 Application application = (Application) o;
                 super.onPostExecute(o);
-                if (listener != null) {
-                    listener.onDataLoaded(application);
+                if (applicationRequestListener != null) {
+                    applicationRequestListener.onDataLoaded(application);
                 }
             }
         };
         task.execute();
     }
 
-    public interface ApplicationListener {
+    public interface ApplicationRequestListener {
         public void onDataLoaded(Application application);
     }
 
     // Member variable was defined earlier
-    private ApplicationListener listener;
+    private ApplicationRequestListener applicationRequestListener;
 
-    public void requestApplication(String applicationId, ApplicationListener listener) {
-        this.listener = listener;
-        requestApplicationTask(applicationId);
+    public interface ApplicationLaunchListener {
+        public void onDataLoaded(Application application);
     }
+
+    // Member variable was defined earlier
+    private ApplicationLaunchListener applicationLaunchListener;
 
     public boolean stop(String applicationId) {
         return false;

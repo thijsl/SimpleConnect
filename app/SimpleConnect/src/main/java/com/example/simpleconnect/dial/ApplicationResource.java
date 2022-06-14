@@ -83,7 +83,7 @@ public class ApplicationResource {
             Application application = new Application();
             System.out.println("we are still trying here");
 
-            application.name = getTextFromSub(serviceDocument, "name");
+            application.name = Util.getTextFromSub(serviceDocument, "name");
             application.instanceUrl = getInstanceUrl(serviceDocument, application.name);
             application.allowStop = getIsAllowStopFromOption(serviceDocument);
             application.additionalData = extractAdditionalData(serviceDocument);
@@ -145,7 +145,7 @@ public class ApplicationResource {
 
     private void extractState(Document document, Application application) throws ApplicationResourceException, MalformedURLException {
 
-        String stateText = getTextFromSub(document, "state");
+        String stateText = Util.getTextFromSub(document, "state");
 
         State state = mapToState(stateText);
         application.state = state;
@@ -200,14 +200,6 @@ public class ApplicationResource {
         if (readTimeout != null) {
             httpUrlConnection.setReadTimeout(readTimeout);
         }
-    }
-
-    private String getTextFromSub(Document element, String tagName) {
-        NodeList elementsByTagName = element.getElementsByTagName(tagName);
-        if (elementsByTagName.getLength() >= 1) {
-            return elementsByTagName.item(0).getTextContent();
-        }
-        return "";
     }
 
     private Document getServiceDocument(InputStream inputStream) throws IOException, ParserConfigurationException, SAXException {

@@ -1,6 +1,5 @@
 package com.example.dial_test;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 
 import com.example.simpleconnect.dial.Device;
@@ -22,9 +21,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -66,13 +62,20 @@ public class MainActivity extends AppCompatActivity {
                     buttonHolder.addView(button);
                     button.setOnClickListener(click -> {
                         System.out.println("Device info: " + device.toString());
-                        device.requestApplication("Netflix", application -> {
+                        device.get("Netflix", application -> {
                             if (application == null) {
                                 System.out.println("Application is not installed.");
                             } else {
                                 System.out.println("Application is: " + application.state);
+                                if (!application.isRunning()) {
+                                    device.launch("Netflix", null, application2 -> {
+                                        System.out.println("Application is launched");
+                                    });
+                                }
+
                             }
                         });
+
                     });
                 }
             }
