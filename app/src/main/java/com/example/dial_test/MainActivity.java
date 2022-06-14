@@ -66,6 +66,13 @@ public class MainActivity extends AppCompatActivity {
                     buttonHolder.addView(button);
                     button.setOnClickListener(click -> {
                         System.out.println("Device info: " + device.toString());
+                        device.requestApplication("Netflix", application -> {
+                            if (application == null) {
+                                System.out.println("Application is not installed.");
+                            } else {
+                                System.out.println("Application is: " + application.state);
+                            }
+                        });
                     });
                 }
             }

@@ -1,7 +1,22 @@
 package com.example.simpleconnect.dial;
 
+import android.os.AsyncTask;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class Device implements Serializable {
 
@@ -64,9 +79,92 @@ public class Device implements Serializable {
     public boolean launch(String applicationId, String[] parameters) {
         return false;
     }
+    
+    private String getTextFromSub(Document element, String tagName) {
+        NodeList elementsByTagName = element.getElementsByTagName(tagName);
+        if (elementsByTagName.getLength() >= 1) {
+            return elementsByTagName.item(0).getTextContent();
+        }
+        return "";
+    }
+    private void requestApplicationTask(String applicationId) {
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Application doInBackground(Object[] objects) {
+                try {
+                    URL appUrl = new URL(applicationResourceUrl.toString() + "/" + applicationId);
+                    if (appUrl == null) {
+                        throw new IllegalArgumentException("This device doesn't have an applicationResourceUrl.");
+                    }
 
-    public boolean isRunning(String applicationId) {
-        return false;
+                    if (!appUrl.getProtocol().equals("http")) {
+                        return null;
+                    }
+                    HttpURLConnection connection = null;
+                    try {
+                        connection = (HttpURLConnection) appUrl.openConnection();
+                        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                            return null;
+                        }
+                        try (InputStream inputStream = connection.getInputStream()) {
+                            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                            Document bodyDocument = documentBuilder.parse(inputStream);
+
+                            bodyDocument.getDocumentElement().normalize();
+                            String name = getTextFromSub(bodyDocument, "name");
+                            String state = getTextFromSub(bodyDocument, "state");
+                            Application application = new Application();
+                            application.name = name;
+                            switch (state) {
+                                case "running":
+                                    application.state = State.RUNNING;
+                                    break;
+                                case "stopped":
+                                    application.state = State.STOPPED;
+                                    break;
+                                case "hidden":
+                                    application.state = State.HIDDEN;
+                                    break;
+                                case "installable":
+                                    application.state = State.INSTALLABLE;
+                                    break;
+                            }
+                            return application;
+                        } catch (ParserConfigurationException | SAXException e) {
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                Application application = (Application) o;
+                super.onPostExecute(o);
+                if (listener != null) {
+                    listener.onDataLoaded(application);
+                }
+            }
+        };
+        task.execute();
+    }
+
+    public interface ApplicationListener {
+        public void onDataLoaded(Application application);
+    }
+
+    // Member variable was defined earlier
+    private ApplicationListener listener;
+
+    public void requestApplication(String applicationId, ApplicationListener listener) {
+        this.listener = listener;
+        requestApplicationTask(applicationId);
     }
 
     public boolean stop(String applicationId) {
