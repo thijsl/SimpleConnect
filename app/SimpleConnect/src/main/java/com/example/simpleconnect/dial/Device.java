@@ -213,17 +213,113 @@ public class Device implements Serializable {
     // Member variable was defined earlier
     private ApplicationLaunchListener applicationLaunchListener;
 
+    public interface ApplicationStopListener {
+        public void onDataLoaded(boolean success);
+    }
+
+    // Member variable was defined earlier
+    private ApplicationStopListener applicationStopListener;
+
+    public interface ApplicationInstallListener {
+        public void onDataLoaded(boolean success);
+    }
+
+    // Member variable was defined earlier
+    private ApplicationInstallListener applicationInstallListener;
+
+
+
     /**
      * Stop any app that is playing
      *
      * @return
      */
-    public boolean stopActiveApplication() {
-        return false;
+    public void stop(Application application, ApplicationStopListener listener) {
+        this.applicationStopListener = listener;
+        stopTask(application);
     }
 
-    public boolean install(String id) {
-        return false;
+    private void stopTask(Application application) {
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                if (!application.instanceUrl.getProtocol().equals("http")) {
+                    return false;
+                }
+                HttpURLConnection connection = null;
+                try {
+                    connection = (HttpURLConnection) application.instanceUrl.openConnection();
+                    connection.setRequestMethod("DELETE");
+                    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        return false;
+                    }
+                    application.state = State.STOPPED;
+                    return true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return false;
+            }
+            @Override
+            protected void onPostExecute(Object o) {
+                boolean success = (boolean) o;
+                super.onPostExecute(o);
+                if (applicationStopListener != null) {
+                    applicationStopListener.onDataLoaded(success);
+                }
+            }
+        };
+        task.execute();
+    }
+
+    public void promptInstall(String id, ApplicationInstallListener listener) {
+        this.applicationInstallListener = listener;
+        promptInstallTask(id);
+    }
+
+    private boolean isRoku() {
+        return manufacturer.toLowerCase().equals("roku");
+    }
+
+    private void promptInstallTask(String id) {
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                if (!isRoku()) {
+                    return false;
+                }
+                HttpURLConnection connection = null;
+                URL deviceUrl = null;
+                try {
+                    deviceUrl = new URL(deviceDescriptorUrl.getProtocol() + "://" + deviceDescriptorUrl.getHost() + ":" + deviceDescriptorUrl.getPort() + "/install/" + id);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    connection = (HttpURLConnection) deviceUrl.openConnection();
+                    connection.setRequestMethod("POST");
+                    boolean appAlreadyInstalled = connection.getResponseCode() == 503;
+                    if (appAlreadyInstalled) {
+                        return false;
+                    } else if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        return false;
+                    }
+                    return true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return false;
+            }
+            @Override
+            protected void onPostExecute(Object o) {
+                boolean success = (boolean) o;
+                super.onPostExecute(o);
+                if (applicationInstallListener != null) {
+                    applicationInstallListener.onDataLoaded(success);
+                }
+            }
+        };
+        task.execute();
     }
 
 }

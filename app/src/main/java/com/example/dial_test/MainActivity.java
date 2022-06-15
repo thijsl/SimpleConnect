@@ -62,19 +62,29 @@ public class MainActivity extends AppCompatActivity {
                     buttonHolder.addView(button);
                     button.setOnClickListener(click -> {
                         System.out.println("Device info: " + device.toString());
-                        device.get("Netflix", application -> {
-                            if (application == null) {
-                                System.out.println("Application is not installed.");
+                        device.promptInstall("196460", success -> {
+                            if (success) {
+                                System.out.println("Prompted install.");
                             } else {
-                                System.out.println("Application is: " + application.state);
-                                if (!application.isRunning()) {
-                                    device.launch(application, null, success -> {
-                                        System.out.println("Application is launched with location " + application.instanceUrl);
-                                    });
-                                }
-
+                                System.out.println("Could not prompt install.");
                             }
                         });
+//                        device.get("Netflix", application -> {
+//                            if (application == null) {
+//                                System.out.println("Application is not installed.");
+//                            } else {
+//                                System.out.println("Application is: " + application.state);
+////                                if (!application.isRunning()) {
+//                                    device.launch(application, null, success -> {
+//                                        System.out.println("Application is launched with location " + application.instanceUrl);
+////                                        device.stop(application, success2 -> {
+////                                            System.out.println("Did app stop: " + success2);
+////                                        });
+//                                    });
+////                                }
+//
+//                            }
+//                        });
 
                     });
                 }
