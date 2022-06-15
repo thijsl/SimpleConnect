@@ -74,10 +74,10 @@ public class Device implements Serializable {
 
     public void launch(Application application, String[] parameters, ApplicationLaunchListener listener) {
         this.applicationLaunchListener = listener;
-        requestLaunchTask(application, parameters);
+        launchTask(application, parameters);
     }
 
-    private void requestLaunchTask(Application application, String[] parameters) {
+    private void launchTask(Application application, String[] parameters) {
         AsyncTask task = new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
