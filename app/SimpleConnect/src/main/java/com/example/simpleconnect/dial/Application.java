@@ -14,6 +14,9 @@ public class Application {
     // The name of the application
     public String name;
 
+    // The ID of the application
+    public String id;
+
     // The state of the application
     public State state;
 

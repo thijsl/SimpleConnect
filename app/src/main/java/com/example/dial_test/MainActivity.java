@@ -47,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-        SimpleConnect dial = new Dial();
         MainActivity context = this;
+        SimpleConnect dial = new Dial();
         dial.requestDevices(devices -> {
             System.out.println("Devices detected through DIAL: " + devices.size());
             if (devices.size() > 0) {
@@ -68,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 System.out.println("Application is: " + application.state);
                                 if (!application.isRunning()) {
-                                    device.launch("Netflix", null, application2 -> {
-                                        System.out.println("Application is launched");
+                                    device.launch(application, null, success -> {
+                                        System.out.println("Application is launched with location " + application.instanceUrl);
                                     });
                                 }
 

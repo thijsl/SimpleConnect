@@ -72,46 +72,36 @@ public class Device implements Serializable {
         return result;
     }
 
-    public DialConnection connect() {
-        return new DialConnection(new ApplicationResource("jdial", this.applicationResourceUrl, this));
-    }
-
-    public void launch(String applicationId, String[] parameters, ApplicationLaunchListener listener) {
+    public void launch(Application application, String[] parameters, ApplicationLaunchListener listener) {
         this.applicationLaunchListener = listener;
-        requestLaunchTask(applicationId, parameters);
+        requestLaunchTask(application, parameters);
     }
 
-    private void requestLaunchTask(String applicationId, String[] parameters) {
+    private void requestLaunchTask(Application application, String[] parameters) {
         AsyncTask task = new AsyncTask() {
             @Override
-            protected Application doInBackground(Object[] objects) {
+            protected Object doInBackground(Object[] objects) {
                 try {
-                    URL appUrl = new URL(applicationResourceUrl.toString() + "/" + applicationId);
+                    URL appUrl = new URL(applicationResourceUrl.toString() + "/" + application.id);
                     if (appUrl == null) {
                         throw new IllegalArgumentException("This device doesn't have an applicationResourceUrl.");
                     }
 
                     if (!appUrl.getProtocol().equals("http")) {
-                        return null;
+                        return false;
                     }
                     HttpURLConnection connection = null;
                     try {
                         connection = (HttpURLConnection) appUrl.openConnection();
                         connection.setDoOutput(true);
-
                         if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                            return null;
+                            return false;
                         }
-
                         try (InputStream inputStream = connection.getInputStream()) {
-                            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-                            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-                            Document bodyDocument = documentBuilder.parse(inputStream);
-
-                            bodyDocument.getDocumentElement().normalize();
-
-                            return null;
-                        } catch (ParserConfigurationException | SAXException e) {
+                            String location = connection.getHeaderField("location");
+                            application.state = State.RUNNING;
+                            application.instanceUrl = new URL(location);
+                            return true;
                         }
 
                     } catch (IOException e) {
@@ -120,14 +110,14 @@ public class Device implements Serializable {
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
-                return null;
+                return false;
             }
             @Override
             protected void onPostExecute(Object o) {
-                Application application = (Application) o;
+                boolean success = (boolean) o;
                 super.onPostExecute(o);
                 if (applicationLaunchListener != null) {
-                    applicationLaunchListener.onDataLoaded(application);
+                    applicationLaunchListener.onDataLoaded(success);
                 }
             }
         };
@@ -158,6 +148,7 @@ public class Device implements Serializable {
                         if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                             return null;
                         }
+
                         try (InputStream inputStream = connection.getInputStream()) {
                             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
                             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -182,6 +173,7 @@ public class Device implements Serializable {
                                     application.state = State.INSTALLABLE;
                                     break;
                             }
+                            application.id = applicationId;
                             return application;
                         } catch (ParserConfigurationException | SAXException e) {
                         }
@@ -215,26 +207,22 @@ public class Device implements Serializable {
     private ApplicationRequestListener applicationRequestListener;
 
     public interface ApplicationLaunchListener {
-        public void onDataLoaded(Application application);
+        public void onDataLoaded(boolean success);
     }
 
     // Member variable was defined earlier
     private ApplicationLaunchListener applicationLaunchListener;
-
-    public boolean stop(String applicationId) {
-        return false;
-    }
 
     /**
      * Stop any app that is playing
      *
      * @return
      */
-    public boolean stop() {
+    public boolean stopActiveApplication() {
         return false;
     }
 
-    public boolean install(String applicationId) {
+    public boolean install(String id) {
         return false;
     }
 
