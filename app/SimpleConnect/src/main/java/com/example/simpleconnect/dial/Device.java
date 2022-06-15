@@ -126,10 +126,10 @@ public class Device implements Serializable {
 
     public void get(String applicationId, ApplicationRequestListener listener) {
         this.applicationRequestListener = listener;
-        requestApplicationTask(applicationId);
+        getTask(applicationId);
     }
 
-    private void requestApplicationTask(String applicationId) {
+    private void getTask(String applicationId) {
         AsyncTask task = new AsyncTask() {
             @Override
             protected Application doInBackground(Object[] objects) {
