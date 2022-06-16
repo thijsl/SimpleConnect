@@ -21,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,13 +56,58 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout buttonHolder = (LinearLayout) findViewById(R.id.buttonHolder);
                 for (int i = 0; i < devices.size(); i++) {
                     Device device = devices.get(i);
-                    Button button = new Button(context);
-                    button.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-                    button.setId(View.generateViewId());
-                    button.setText(device.friendlyName);
-                    buttonHolder.addView(button);
-                    button.setOnClickListener(click -> {
-                        System.out.println("Device info: " + device.toString());
+                    TextView label = new TextView(context);
+                    label.setText(device.friendlyName);
+                    buttonHolder.addView(label);
+
+                    String APPLICATION_ID = "Philo";
+
+                    Button launchButton = new Button(context);
+                    launchButton.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                    launchButton.setId(View.generateViewId());
+                    launchButton.setText("Launch app");
+                    buttonHolder.addView(launchButton);
+                    launchButton.setOnClickListener(click -> {
+                        device.get(APPLICATION_ID, application -> {
+                            if (application == null) {
+                                System.out.println("Application is not installed.");
+                            } else {
+                                System.out.println("Application is: " + application.state);
+                                if (!application.isRunning()) {
+                                    device.launch(application, null, success -> {
+                                        System.out.println("Application is launched with location " + application.instanceUrl);
+                                    });
+                                }
+                            }
+                        });
+                    });
+
+                    Button stopButton = new Button(context);
+                    stopButton.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                    stopButton.setId(View.generateViewId());
+                    stopButton.setText("Stop app");
+                    buttonHolder.addView(stopButton);
+                    stopButton.setOnClickListener(click -> {
+                        device.get(APPLICATION_ID, application -> {
+                            if (application == null) {
+                                System.out.println("Application is not installed.");
+                            } else {
+                                System.out.println("Application is: " + application.state);
+                                if (application.isRunning()) {
+                                    device.stop(application, success2 -> {
+                                        System.out.println("Did app stop: " + success2);
+                                    });
+                                }
+                            }
+                        });
+                    });
+
+                    Button promptInstallButton = new Button(context);
+                    promptInstallButton.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                    promptInstallButton.setId(View.generateViewId());
+                    promptInstallButton.setText("Install app");
+                    buttonHolder.addView(promptInstallButton);
+                    promptInstallButton.setOnClickListener(click -> {
                         device.promptInstall("196460", success -> {
                             if (success) {
                                 System.out.println("Prompted install.");
@@ -69,24 +115,8 @@ public class MainActivity extends AppCompatActivity {
                                 System.out.println("Could not prompt install.");
                             }
                         });
-//                        device.get("Netflix", application -> {
-//                            if (application == null) {
-//                                System.out.println("Application is not installed.");
-//                            } else {
-//                                System.out.println("Application is: " + application.state);
-////                                if (!application.isRunning()) {
-//                                    device.launch(application, null, success -> {
-//                                        System.out.println("Application is launched with location " + application.instanceUrl);
-////                                        device.stop(application, success2 -> {
-////                                            System.out.println("Did app stop: " + success2);
-////                                        });
-//                                    });
-////                                }
-//
-//                            }
-//                        });
-
                     });
+
                 }
             }
         });
