@@ -82,19 +82,21 @@ public class Device implements Serializable {
             @Override
             protected Object doInBackground(Object[] objects) {
                 try {
-                    URL appUrl = new URL(applicationResourceUrl.toString() + "/" + application.id);
-                    if (appUrl == null) {
-                        throw new IllegalArgumentException("This device doesn't have an applicationResourceUrl.");
+                    String path = applicationResourceUrl.getPath();
+                    String lastChar = path.substring(path.length()-1);
+                    if (!lastChar.equals("/")) {
+                        path = path + "/";
                     }
-
+                    URL appUrl = new URL(applicationResourceUrl.getProtocol() + "://" + applicationResourceUrl.getHost() + ":" + applicationResourceUrl.getPort() + path + application.id);
                     if (!appUrl.getProtocol().equals("http")) {
                         return false;
                     }
                     HttpURLConnection connection = null;
                     try {
                         connection = (HttpURLConnection) appUrl.openConnection();
-                        connection.setDoOutput(true);
-                        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        connection.setRequestMethod("POST");
+                        connection.setRequestProperty("Content-Length", "0");
+                        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK || connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
                             return false;
                         }
                         try (InputStream inputStream = connection.getInputStream()) {
@@ -134,7 +136,12 @@ public class Device implements Serializable {
             @Override
             protected Application doInBackground(Object[] objects) {
                 try {
-                    URL appUrl = new URL(applicationResourceUrl.toString() + "/" + applicationId);
+                    String path = applicationResourceUrl.getPath();
+                    String lastChar = path.substring(path.length()-1);
+                    if (!lastChar.equals("/")) {
+                        path = path + "/";
+                    }
+                    URL appUrl = new URL(applicationResourceUrl.getProtocol() + "://" + applicationResourceUrl.getHost() + ":" + applicationResourceUrl.getPort() + path + applicationId);
                     if (appUrl == null) {
                         throw new IllegalArgumentException("This device doesn't have an applicationResourceUrl.");
                     }
