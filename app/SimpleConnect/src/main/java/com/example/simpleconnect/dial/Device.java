@@ -243,6 +243,13 @@ public class Device implements Serializable {
         AsyncTask task = new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
+                if (application.instanceUrl == null) {
+                    try {
+                        application.instanceUrl = new URL(applicationResourceUrl.toString() + "/" + application.id + "/run");
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                }
                 if (!application.instanceUrl.getProtocol().equals("http")) {
                     return false;
                 }
