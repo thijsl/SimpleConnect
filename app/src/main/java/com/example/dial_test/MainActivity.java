@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                                 System.out.println("Application is: " + application.state);
                                 if (!application.isRunning()) {
                                     device.launch(application, null, success -> {
+                                        System.out.println("Application launch success? " + success);
                                         System.out.println("Application is launched with location " + application.instanceUrl);
                                     });
                                 }
