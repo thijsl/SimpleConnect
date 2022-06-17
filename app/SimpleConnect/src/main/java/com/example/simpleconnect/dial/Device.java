@@ -95,17 +95,17 @@ public class Device implements Serializable {
                     try {
                         connection = (HttpURLConnection) appUrl.openConnection();
                         connection.setRequestMethod("POST");
+                        connection.setDoOutput(true);
                         connection.setRequestProperty("Content-Length", "0");
-                        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK || connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
+                        connection.setRequestProperty("Content-Type", "text/plain");
+                        connection.getOutputStream().close();
+                         if (connection.getResponseCode() != HttpURLConnection.HTTP_OK || connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
                             return false;
                         }
-                        try (InputStream inputStream = connection.getInputStream()) {
-                            String location = connection.getHeaderField("location");
-                            application.state = State.RUNNING;
-                            application.instanceUrl = new URL(location);
-                            return true;
-                        }
-
+                        String location = connection.getHeaderField("location");
+                        application.state = State.RUNNING;
+                        application.instanceUrl = new URL(location);
+                        return true;
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
